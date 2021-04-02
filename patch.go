@@ -11,9 +11,7 @@ var ErrBadYamlDoc = fmt.Errorf("invalid yaml Document")
 
 func NewPatch(operation, path string, value interface{}) PatchOperation {
 	var n yaml.Node
-	if err := n.Encode(value); err != nil {
-		panic(err)
-	}
+	n.Encode(value)
 
 	return PatchOperation{Op: operation, JSONPointer: path, Value: n}
 }
