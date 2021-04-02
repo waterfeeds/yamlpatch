@@ -2,8 +2,6 @@ package yamlpatch_test
 
 import (
 	"github.com/waterfeeds/yamlpatch"
-	"gopkg.in/yaml.v3"
-	"strings"
 	"testing"
 )
 
@@ -45,28 +43,12 @@ spec:
           image: nginx:latest
 `
 
-	var n yaml.Node
-	if err := yaml.Unmarshal([]byte(input), &n); err != nil {
-		t.Fatal(err)
-	}
-
-	ops, err := yamlpatch.Compare([]byte(input), []byte(patch))
+	applied, err := yamlpatch.ApplyPatch(input, patch)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err = yamlpatch.Apply(&n, ops); err != nil {
-		t.Fatal(err)
-	}
-
-	var bytes strings.Builder
-	e := yaml.NewEncoder(&bytes)
-	e.SetIndent(2)
-	if err := e.Encode(&n); err != nil {
-		t.Fatal(err)
-	}
-
-	if want != bytes.String() {
+	if want != applied {
 		t.Fatal("yaml patch apply failed")
 	}
 }

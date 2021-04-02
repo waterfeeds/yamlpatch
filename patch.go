@@ -9,7 +9,7 @@ import (
 
 var ErrBadYamlDoc = fmt.Errorf("invalid yaml Document")
 
-func NewPatch(operation, path string, value interface{}) PatchOperation {
+func newPatch(operation, path string, value interface{}) PatchOperation {
 	var n yaml.Node
 	n.Encode(value)
 
@@ -119,19 +119,19 @@ func makePath(path string, newPart interface{}) string {
 	return path + "/" + key
 }
 
-// diff returns the (recursive) difference between a and b as an array of PatchOperations.
+// diffYaml returns the (recursive) difference between a and b as an array of PatchOperations.
 func diffYaml(a, b map[interface{}]interface{}, path string, patch []PatchOperation) ([]PatchOperation, error) {
 	for key, bv := range b {
 		p := makePath(path, key)
 		av, ok := a[key]
 		// value was added
 		if !ok {
-			patch = append(patch, NewPatch("add", p, bv))
+			patch = append(patch, newPatch("add", p, bv))
 			continue
 		}
 		// If types have changed, replace completely
 		if reflect.TypeOf(av) != reflect.TypeOf(bv) {
-			patch = append(patch, NewPatch("replace", p, bv))
+			patch = append(patch, newPatch("replace", p, bv))
 			continue
 		}
 		// Types are the same, compare values
@@ -147,7 +147,7 @@ func diffYaml(a, b map[interface{}]interface{}, path string, patch []PatchOperat
 		if !found {
 			p := makePath(path, key)
 
-			patch = append(patch, NewPatch("remove", p, nil))
+			patch = append(patch, newPatch("remove", p, nil))
 		}
 	}
 	return patch, nil
@@ -160,12 +160,12 @@ func diff(a, b map[string]interface{}, path string, patch []PatchOperation) ([]P
 		av, ok := a[key]
 		// value was added
 		if !ok {
-			patch = append(patch, NewPatch("add", p, bv))
+			patch = append(patch, newPatch("add", p, bv))
 			continue
 		}
 		// If types have changed, replace completely
 		if reflect.TypeOf(av) != reflect.TypeOf(bv) {
-			patch = append(patch, NewPatch("replace", p, bv))
+			patch = append(patch, newPatch("replace", p, bv))
 			continue
 		}
 		// Types are the same, compare values
@@ -181,7 +181,7 @@ func diff(a, b map[string]interface{}, path string, patch []PatchOperation) ([]P
 		if !found {
 			p := makePath(path, key)
 
-			patch = append(patch, NewPatch("remove", p, nil))
+			patch = append(patch, newPatch("remove", p, nil))
 		}
 	}
 	return patch, nil
@@ -204,13 +204,13 @@ func handleValues(av, bv interface{}, p string, patch []PatchOperation) ([]Patch
 		}
 	case string, float64, bool, int:
 		if !matchesValue(av, bv) {
-			patch = append(patch, NewPatch("replace", p, bv))
+			patch = append(patch, newPatch("replace", p, bv))
 		}
 	case []interface{}:
 		bt, ok := bv.([]interface{})
 		if !ok {
 			// array replaced by non-array
-			patch = append(patch, NewPatch("replace", p, bv))
+			patch = append(patch, newPatch("replace", p, bv))
 		} else if len(at) != len(bt) {
 			// arrays are not the same length
 			patch = append(patch, compareArray(at, bt, p)...)
@@ -228,7 +228,7 @@ func handleValues(av, bv interface{}, p string, patch []PatchOperation) ([]Patch
 		case nil:
 			// Both nil, fine.
 		default:
-			patch = append(patch, NewPatch("add", p, bv))
+			patch = append(patch, newPatch("add", p, bv))
 		}
 	default:
 		panic(fmt.Sprintf("Unknown type:%T ", av))
@@ -242,13 +242,13 @@ func compareArray(av, bv []interface{}, p string) []PatchOperation {
 
 	// Find elements that need to be removed
 	processArray(av, bv, func(i int, value interface{}) {
-		retval = append(retval, NewPatch("remove", makePath(p, i), nil))
+		retval = append(retval, newPatch("remove", makePath(p, i), nil))
 	})
 
 	// Find elements that need to be added.
 	// NOTE we pass in `bv` then `av` so that processArray can find the missing elements.
 	processArray(bv, av, func(i int, value interface{}) {
-		retval = append(retval, NewPatch("add", makePath(p, i), value))
+		retval = append(retval, newPatch("add", makePath(p, i), value))
 	})
 
 	return retval

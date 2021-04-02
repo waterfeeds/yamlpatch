@@ -5,7 +5,33 @@ import (
 	"github.com/vmware-labs/yaml-jsonpath/pkg/yamlpath"
 	"github.com/waterfeeds/yamlpatch/jsonpath"
 	"gopkg.in/yaml.v3"
+	"strings"
 )
+
+func ApplyPatch(a, b string) (string, error) {
+	var n yaml.Node
+	if err := yaml.Unmarshal([]byte(a), &n); err != nil {
+		return "", err
+	}
+
+	ops, err := Compare([]byte(a), []byte(b))
+	if err != nil {
+		return "", err
+	}
+
+	if err = Apply(&n, ops); err != nil {
+		return "", err
+	}
+
+	var bytes strings.Builder
+	e := yaml.NewEncoder(&bytes)
+	e.SetIndent(2)
+	if err = e.Encode(&n); err != nil {
+		return "", err
+	}
+
+	return bytes.String(), nil
+}
 
 // Apply applies the set of operations to the YAML node in order.
 func Apply(n *yaml.Node, ops []PatchOperation) error {
