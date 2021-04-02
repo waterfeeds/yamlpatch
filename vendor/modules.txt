@@ -1,0 +1,19 @@
+# github.com/dprotaso/go-yit v0.0.0-20191028211022-135eb7262960
+github.com/dprotaso/go-yit
+# github.com/google/go-cmp v0.5.5
+## explicit
+github.com/google/go-cmp/cmp
+github.com/google/go-cmp/cmp/cmpopts
+github.com/google/go-cmp/cmp/internal/diff
+github.com/google/go-cmp/cmp/internal/flags
+github.com/google/go-cmp/cmp/internal/function
+github.com/google/go-cmp/cmp/internal/value
+# github.com/vmware-labs/yaml-jsonpath v0.0.0-20200625154356-ea62dcd51756
+## explicit
+github.com/vmware-labs/yaml-jsonpath/pkg/yamlpath
+# golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
+golang.org/x/xerrors
+golang.org/x/xerrors/internal
+# gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+## explicit
+gopkg.in/yaml.v3
