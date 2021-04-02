@@ -12,7 +12,7 @@ This is a command line tool to apply a JSON Patch to a YAML Document preserving 
 **Note**: currently only `op=replace` mode is implemented
 
 ## Thanks for the contribution of these projects
-https://github.com/int128/yamlpatch
+https://github.com/int128/yamlpatch  
 https://github.com/mattbaird/jsonpatch
 
 ## Getting Started
