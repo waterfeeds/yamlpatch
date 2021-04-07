@@ -19,7 +19,7 @@ func ApplyPatch(a, b string) (string, error) {
 		return "", err
 	}
 
-	if err = Apply(&n, ops); err != nil {
+	if err = applyOnNode(&n, ops); err != nil {
 		return "", err
 	}
 
@@ -33,8 +33,28 @@ func ApplyPatch(a, b string) (string, error) {
 	return bytes.String(), nil
 }
 
+func Apply(yamlS string, ops []PatchOperation) (string, error) {
+	var n yaml.Node
+	if err := yaml.Unmarshal([]byte(yamlS), &n); err != nil {
+		return "", err
+	}
+
+	if err := applyOnNode(&n, ops); err != nil {
+		return "", err
+	}
+
+	var bytes strings.Builder
+	e := yaml.NewEncoder(&bytes)
+	e.SetIndent(2)
+	if err := e.Encode(&n); err != nil {
+		return "", err
+	}
+
+	return bytes.String(), nil
+}
+
 // Apply applies the set of operations to the YAML node in order.
-func Apply(n *yaml.Node, ops []PatchOperation) error {
+func applyOnNode(n *yaml.Node, ops []PatchOperation) error {
 	for _, operation := range ops {
 		if operation.Op != "replace" {
 			continue
