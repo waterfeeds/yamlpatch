@@ -213,7 +213,7 @@ func handleValues(av, bv interface{}, p string, patch []PatchOperation) ([]Patch
 			patch = append(patch, newPatch("replace", p, bv))
 		} else if len(at) != len(bt) {
 			// arrays are not the same length
-			patch = append(patch, compareArray(at, bt, p)...)
+			patch = append(patch, newPatch("replace", p, bv))
 
 		} else {
 			for i := range bt {
