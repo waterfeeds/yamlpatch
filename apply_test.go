@@ -143,7 +143,7 @@ spec:
 			if err := yaml.Unmarshal([]byte(tc.patch), &ops); err != nil {
 				t.Fatalf("unmarshal error: %s", err)
 			}
-			if err := applyOnNode(&n, ops); err != nil {
+			if err := apply(&n, ops); err != nil {
 				t.Errorf("apply error: %s", err)
 			}
 			var b strings.Builder
@@ -182,7 +182,7 @@ func TestApply_jsonpatch_conformance(t *testing.T) {
 	cmpOptsNode := cmpopts.IgnoreFields(yaml.Node{}, "Line", "Column")
 	for _, tc := range testcases {
 		t.Run(tc.Comment, func(t *testing.T) {
-			err := applyOnNode(&tc.Doc, tc.Patch)
+			err := apply(&tc.Doc, tc.Patch)
 			if tc.Error != "" {
 				if err == nil {
 					t.Errorf("apply wants error but was nil (%s)", tc.Error)

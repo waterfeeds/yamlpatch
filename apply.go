@@ -19,7 +19,7 @@ func ApplyPatch(a, b string) (string, error) {
 		return "", err
 	}
 
-	if err = applyOnNode(&n, ops); err != nil {
+	if err = apply(&n, ops); err != nil {
 		return "", err
 	}
 
@@ -39,7 +39,7 @@ func Apply(yamlS string, ops []PatchOperation) (string, error) {
 		return "", err
 	}
 
-	if err := applyOnNode(&n, ops); err != nil {
+	if err := apply(&n, ops); err != nil {
 		return "", err
 	}
 
@@ -54,19 +54,52 @@ func Apply(yamlS string, ops []PatchOperation) (string, error) {
 }
 
 // Apply applies the set of operations to the YAML node in order.
-func applyOnNode(n *yaml.Node, ops []PatchOperation) error {
+func apply(n *yaml.Node, ops []PatchOperation) error {
 	for _, operation := range ops {
-		if operation.Op != "replace" {
-			continue
-		}
-		if err := apply(n, operation); err != nil {
-			return fmt.Errorf("yamlpatch.Apply error: %w", err)
+		switch operation.Op {
+		case "add":
+			if err := applyAdd(n, operation); err != nil {
+				return fmt.Errorf("apply add error: %w", err)
+			}
+		case "replace":
+			if err := applyReplace(n, operation); err != nil {
+				return fmt.Errorf("apply replace error: %w", err)
+			}
+		default:
 		}
 	}
 	return nil
 }
 
-func apply(n *yaml.Node, o PatchOperation) error {
+func applyAdd(n *yaml.Node, o PatchOperation) error {
+	if o.Value.IsZero() {
+		return fmt.Errorf("missing value in patch (op=%s)", o.Op)
+	}
+
+	targetPath, err := compileParentPath(o)
+	if err != nil {
+		return fmt.Errorf("invalid patch: %w", err)
+	}
+
+	nodes, err := targetPath.Find(n)
+	if err != nil {
+		return fmt.Errorf("could not find the path in YAML: %w", err)
+	}
+	if len(nodes) == 0 {
+		return fmt.Errorf("any node did not match (path=%s, jsonpath=%s)", o.JSONPointer, o.JSONPath)
+	}
+
+	var addNodeKey, addNodeVal yaml.Node
+	addNodeKey.Encode(findAbsPath(o.JSONPointer))
+	addNodeVal.Encode(o.Value)
+
+	// append add node to parent's content
+	nodes[0].Content = append(nodes[0].Content, &addNodeKey, &addNodeVal)
+
+	return nil
+}
+
+func applyReplace(n *yaml.Node, o PatchOperation) error {
 	if o.Value.IsZero() {
 		return fmt.Errorf("missing value in patch (op=%s)", o.Op)
 	}
@@ -75,13 +108,16 @@ func apply(n *yaml.Node, o PatchOperation) error {
 	if err != nil {
 		return fmt.Errorf("invalid patch: %w", err)
 	}
+
 	nodes, err := targetPath.Find(n)
 	if err != nil {
 		return fmt.Errorf("could not find the path in YAML: %w", err)
 	}
+
 	if len(nodes) == 0 {
 		return fmt.Errorf("any node did not match (path=%s, jsonpath=%s)", o.JSONPointer, o.JSONPath)
 	}
+
 	for _, node := range nodes {
 		node.Kind = o.Value.Kind
 		node.Style = o.Value.Style
@@ -92,23 +128,43 @@ func apply(n *yaml.Node, o PatchOperation) error {
 	return nil
 }
 
-func compilePath(o PatchOperation) (*yamlpath.Path, error) {
-	if o.JSONPath != "" && o.JSONPointer != "" {
-		return nil, fmt.Errorf("do not set both path and jsonpath (jsonpointer=%s, jsonpath=%s)", o.JSONPointer, o.JSONPath)
-	}
+func compileParentPath(o PatchOperation) (*yamlpath.Path, error) {
+	parentPath := findParentPath(o.JSONPointer)
+	jsonPath := jsonpath.FromJSONPointer(parentPath)
 
-	if o.JSONPath != "" {
-		compiled, err := yamlpath.NewPath(o.JSONPath)
-		if err != nil {
-			return nil, fmt.Errorf("invalid JSON Path (path=%s): %w", o.JSONPath, err)
-		}
-		return compiled, nil
-	}
-
-	jsonPath := jsonpath.FromJSONPointer(o.JSONPointer)
 	compiled, err := yamlpath.NewPath(jsonPath)
 	if err != nil {
 		return nil, fmt.Errorf("invalid JSON Path (path=%s) -> (jsonpath=%s): %w", o.JSONPointer, jsonPath, err)
 	}
+
+	return compiled, nil
+}
+
+func findParentPath(path string) string {
+	pathArr := strings.Split(path, "/")
+	if len(pathArr) <= 1 {
+		return ""
+	}
+
+	return strings.Join(pathArr[:len(pathArr)-1], "/")
+}
+
+func findAbsPath(path string) string {
+	pathArr := strings.Split(path, "/")
+	if len(pathArr) < 1 {
+		return ""
+	}
+
+	return pathArr[len(pathArr)-1]
+}
+
+func compilePath(o PatchOperation) (*yamlpath.Path, error) {
+	jsonPath := jsonpath.FromJSONPointer(o.JSONPointer)
+
+	compiled, err := yamlpath.NewPath(jsonPath)
+	if err != nil {
+		return nil, fmt.Errorf("invalid JSON Path (path=%s) -> (jsonpath=%s): %w", o.JSONPointer, jsonPath, err)
+	}
+
 	return compiled, nil
 }
