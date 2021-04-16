@@ -76,6 +76,16 @@ func applyAdd(n *yaml.Node, o PatchOperation) error {
 		return fmt.Errorf("missing value in patch (op=%s)", o.Op)
 	}
 
+	found, err := hasFindPath(n, o)
+	if err != nil {
+		return err
+	}
+
+	// if found the same path for add patch, replace it.
+	if found {
+		return applyReplace(n, o)
+	}
+
 	targetPath, err := compileParentPath(o)
 	if err != nil {
 		return fmt.Errorf("invalid patch: %w", err)
@@ -97,6 +107,20 @@ func applyAdd(n *yaml.Node, o PatchOperation) error {
 	nodes[0].Content = append(nodes[0].Content, &addNodeKey, &addNodeVal)
 
 	return nil
+}
+
+func hasFindPath(n *yaml.Node, o PatchOperation) (bool, error) {
+	targetPath, err := compilePath(o)
+	if err != nil {
+		return false, fmt.Errorf("invalid patch: %w", err)
+	}
+
+	nodes, err := targetPath.Find(n)
+	if err != nil {
+		return false, fmt.Errorf("could not find the path in YAML: %w", err)
+	}
+
+	return len(nodes) > 0, nil
 }
 
 func applyReplace(n *yaml.Node, o PatchOperation) error {
