@@ -97,25 +97,15 @@ func matchesValue(av, bv interface{}) bool {
 	return false
 }
 
-// From http://tools.ietf.org/html/rfc6901#section-4 :
-//
-// Evaluation of each reference token begins by decoding any escaped
-// character sequence.  This is performed by first transforming any
-// occurrence of the sequence '~1' to '/', and then transforming any
-// occurrence of the sequence '~0' to '~'.
-//   TODO decode support:
-//   var rfc6901Decoder = strings.NewReplacer("~1", "/", "~0", "~")
-
-var rfc6901Encoder = strings.NewReplacer("~", "~0", "/", "~1")
-
 func makePath(path string, newPart interface{}) string {
-	key := rfc6901Encoder.Replace(fmt.Sprintf("%v", newPart))
+	key := fmt.Sprintf("%v", newPart)
 	if path == "" {
 		return "/" + key
 	}
 	if strings.HasSuffix(path, "/") {
 		return path + key
 	}
+
 	return path + "/" + key
 }
 

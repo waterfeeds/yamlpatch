@@ -9,7 +9,7 @@ This is a command line tool to apply a JSON Patch to a YAML Document preserving 
 - Passed the [conformance tests](https://github.com/json-patch/json-patch-tests) of JSON Patch
 - Single binary
 
-**Note**: currently only `op=replace` mode is implemented
+**Note**: currently `op=replace` and `op=add` mode is implemented
 
 ## Thanks for the contribution of these projects
 https://github.com/int128/yamlpatch  
