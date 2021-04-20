@@ -179,7 +179,12 @@ func findAbsPath(path string) string {
 		return ""
 	}
 
-	return pathArr[len(pathArr)-1]
+	absPath := pathArr[len(pathArr)-1]
+	// unescape: https://tools.ietf.org/html/rfc6901#section-4
+	absPath = strings.ReplaceAll(absPath, "~1", "/")
+	absPath = strings.ReplaceAll(absPath, "~0", "~")
+
+	return absPath
 }
 
 func compilePath(o PatchOperation) (*yamlpath.Path, error) {
