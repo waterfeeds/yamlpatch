@@ -138,10 +138,6 @@ func applyReplace(n *yaml.Node, o PatchOperation) error {
 		return fmt.Errorf("could not find the path in YAML: %w", err)
 	}
 
-	if len(nodes) == 0 {
-		return fmt.Errorf("any node did not match (path=%s, jsonpath=%s)", o.JSONPointer, o.JSONPath)
-	}
-
 	for _, node := range nodes {
 		node.Kind = o.Value.Kind
 		node.Style = o.Value.Style
