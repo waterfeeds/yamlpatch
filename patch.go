@@ -192,16 +192,20 @@ func handleValues(av, bv interface{}, p string, patch []PatchOperation) ([]Patch
 	var err error
 	switch at := av.(type) {
 	case map[string]interface{}:
-		bt := bv.(map[string]interface{})
-		patch, err = diff(at, bt, p, patch)
-		if err != nil {
-			return nil, err
+		bt, ok := bv.(map[string]interface{})
+		if ok {
+			patch, err = diff(at, bt, p, patch)
+			if err != nil {
+				return nil, err
+			}
 		}
 	case map[interface{}]interface{}:
-		bt := bv.(map[interface{}]interface{})
-		patch, err = diffYaml(at, bt, p, patch)
-		if err != nil {
-			return nil, err
+		bt, ok := bv.(map[interface{}]interface{})
+		if ok {
+			patch, err = diffYaml(at, bt, p, patch)
+			if err != nil {
+				return nil, err
+			}
 		}
 	case string, float64, bool, int:
 		if !matchesValue(av, bv) {
@@ -215,7 +219,6 @@ func handleValues(av, bv interface{}, p string, patch []PatchOperation) ([]Patch
 		} else if len(at) != len(bt) {
 			// arrays are not the same length
 			patch = append(patch, newPatch("replace", p, bv))
-
 		} else {
 			for i := range bt {
 				patch, err = handleValues(at[i], bt[i], makePath(p, i), patch)
